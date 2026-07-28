@@ -1,0 +1,7 @@
+﻿services:
+  timeprovider.service:
+    image: timeprovider.service
+    build:
+      context: .
+      dockerfile: TimeProvider.Service/Dockerfile
+
