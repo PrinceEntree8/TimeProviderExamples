@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace TimeProviderExample.Wpf;
 
@@ -12,10 +13,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly HttpClient _httpClient;
 
     [ObservableProperty]
-    public partial string CurrentDate { get; set; } = DateTime.Now.ToString("d");
+    public partial string CurrentDate { get; set; } = "---";
 
     [ObservableProperty]
-    public partial string CurrentTime { get; set; } = DateTime.Now.ToString("T");
+    public partial string CurrentTime { get; set; } = "---";
 
     [ObservableProperty]
     public partial string RealTime { get; set; } = DateTime.Now.ToString("G");
@@ -33,13 +34,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         _timeProvider = timeProvider;
         _httpClient = httpClient;
-        _timer = new Timer(UpdateDateTime, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(1000));
+        _timer = new Timer(UpdateDateTime, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(100));
     }
 
     [RelayCommand]
     private void SetScale(double value)
     {
         Scale = value;
+    }
+
+    [RelayCommand]
+    private void SpawnMainWindow()
+    {
+        var mainWindow = App.ServiceProvider.GetRequiredService<MainWindow>();
+        mainWindow.Show();
     }
 
     private void UpdateDateTime(object? state)
@@ -70,7 +78,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 Console.WriteLine($"Error updating scale: {ex.Message}");
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored
         }

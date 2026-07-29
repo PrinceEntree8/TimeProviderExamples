@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,7 +9,7 @@ namespace TimeProviderExample.Wpf;
 /// </summary>
 public partial class App : Application
 {
-    public IServiceProvider ServiceProvider { get; private set; } = null!;
+    public static IServiceProvider ServiceProvider { get; private set; } = null!;
 
     public App()
     {

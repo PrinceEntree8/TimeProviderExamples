@@ -1,20 +1,19 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace TimeProviderExample.Wpf;
 
 public class UdpTimeProvider : TimeProvider, IDisposable
 {
-    private readonly UdpClient _udpClient;
+    private readonly UdpClient _udpClient = new();
     private long _lastTicks = DateTimeOffset.UtcNow.UtcTicks;
+    private long _packetCount = 0;
     private readonly CancellationTokenSource _cts = new();
+
+    public long PacketCount => Interlocked.Read(ref _packetCount);
 
     public UdpTimeProvider(string multicastAddress, int port)
     {
-        _udpClient = new UdpClient();
         _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
         _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, port));
         _udpClient.JoinMulticastGroup(IPAddress.Parse(multicastAddress));
@@ -32,6 +31,7 @@ public class UdpTimeProvider : TimeProvider, IDisposable
                 if (result.Buffer.Length != sizeof(long)) continue;
                 var ticks = BitConverter.ToInt64(result.Buffer, 0);
                 Interlocked.Exchange(ref _lastTicks, ticks);
+                Interlocked.Increment(ref _packetCount);
             }
         }
         catch (OperationCanceledException) { }
