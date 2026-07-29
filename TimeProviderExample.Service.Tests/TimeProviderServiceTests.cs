@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using TimeProviderExample.Service.Services;
-using Xunit;
+﻿using TimeProviderExample.Service.Services;
 
 namespace TimeProviderExample.Service.Tests;
 
@@ -25,7 +21,7 @@ public class TimeProviderServiceTests
     {
         // Arrange
         var startTime = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
-        double scale = 10.5;
+        const double scale = 10.5;
 
         // Act
         var service = new TimeProviderService(startTime, scale);
@@ -40,16 +36,16 @@ public class TimeProviderServiceTests
     {
         // Arrange
         var service = new TimeProviderService(DateTimeOffset.UtcNow, 10);
-        var t1_scaled = service.GetUtcNow();
+        var t1Scaled = service.GetUtcNow();
         
         // Act
         await Task.Delay(1000); // 1 real second
-        var t2_scaled = service.GetUtcNow();
-        var elapsed_scaled = (t2_scaled - t1_scaled).TotalSeconds;
+        var t2Scaled = service.GetUtcNow();
+        var elapsedScaled = (t2Scaled - t1Scaled).TotalSeconds;
 
         // Assert
         // With scale 10, 1 real second should be approx 10 scaled seconds
-        Assert.InRange(elapsed_scaled, 8.0, 12.0);
+        Assert.InRange(elapsedScaled, 8.0, 12.0);
     }
 
     [Fact]
@@ -87,9 +83,9 @@ public class TimeProviderServiceTests
     public async Task OnTickSeconds_FiresAtCorrectFrequency()
     {
         // Arrange
-        double scale = 5.0;
+        const double scale = 5.0;
         var service = new TimeProviderService(DateTimeOffset.UtcNow, scale);
-        int ticks = 0;
+        var ticks = 0;
         service.OnTickSeconds += _ => ticks++;
 
         // Act
@@ -103,10 +99,10 @@ public class TimeProviderServiceTests
     public void CreateTimer_ScalesDueTimeAndPeriod()
     {
         // Arrange
-        double scale = 2.0;
+        const double scale = 2.0;
         var service = new TimeProviderService(DateTimeOffset.UtcNow, scale);
         var provider = service.GetTimeProvider();
-        int callCount = 0;
+        var callCount = 0;
         var tcs = new TaskCompletionSource<bool>();
 
         // Act
@@ -118,7 +114,7 @@ public class TimeProviderServiceTests
 
         // 1 scaled second / 2 scale = 0.5 real seconds.
         // 2 ticks = 0.5 (due) + 0.5 (period) = 1.0 real second total.
-        bool completed = tcs.Task.Wait(TimeSpan.FromSeconds(3));
+        var completed = tcs.Task.Wait(TimeSpan.FromSeconds(3));
 
         // Assert
         Assert.True(completed, "Timer did not fire enough times in expected real time.");
@@ -148,17 +144,17 @@ public class TimeProviderServiceTests
     public async Task SetScale_Fractional_WorksCorrectly()
     {
         // Arrange
-        double scale = 0.5;
+        const double scale = 0.5;
         var service = new TimeProviderService(DateTimeOffset.UtcNow, scale);
-        var t1_scaled = service.GetUtcNow();
+        var t1Scaled = service.GetUtcNow();
         
         // Act
         await Task.Delay(2000); // 2 real seconds
-        var t2_scaled = service.GetUtcNow();
-        var elapsed_scaled = (t2_scaled - t1_scaled).TotalSeconds;
+        var t2Scaled = service.GetUtcNow();
+        var elapsedScaled = (t2Scaled - t1Scaled).TotalSeconds;
 
         // Assert
         // With scale 0.5, 2 real seconds should be approx 1 scaled second
-        Assert.InRange(elapsed_scaled, 0.8, 1.2);
+        Assert.InRange(elapsedScaled, 0.8, 1.2);
     }
 }
