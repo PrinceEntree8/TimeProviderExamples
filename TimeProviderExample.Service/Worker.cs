@@ -3,7 +3,7 @@ using TimeProviderExample.Service.Services;
 
 namespace TimeProviderExample.Service;
 
-public class Worker(
+public partial class Worker(
     ILogger<Worker> logger,
     TimeProviderService timeProviderService,
     UdpClientService udpClientService
@@ -12,20 +12,45 @@ public class Worker(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var lastLogTime = DateTime.MinValue;
+        var lastMetricLogTime = DateTime.UtcNow;
+        var packetCount = 0;
+        var totalSendTime = TimeSpan.Zero;
 
         while (!stoppingToken.IsCancellationRequested)
         {
             var now = timeProviderService.GetUtcNow();
-            udpClientService.Send(now.UtcTicks);
+            var sendDuration = udpClientService.Send(now.UtcTicks);
+            packetCount++;
+            totalSendTime += sendDuration;
 
-            if (logger.IsEnabled(LogLevel.Debug) && (DateTime.UtcNow - lastLogTime).TotalSeconds >= 1)
+            if ((DateTime.UtcNow - lastLogTime).TotalSeconds >= 1)
             {
-                logger.LogDebug("Worker realtime running at: {time}", TimeProvider.System.GetUtcNow());
-                logger.LogDebug("Worker simulation running at: {time}", now);
+                LogWorkerRealtimeRunningAtTime(TimeProvider.System.GetUtcNow());
+                LogWorkerSimulationRunningAtTime(now);
                 lastLogTime = DateTime.UtcNow;
+            }
+
+            if ((DateTime.UtcNow - lastMetricLogTime).TotalSeconds >= 10)
+            {
+                var avgPackets = packetCount / 10.0;
+                var avgSendTime = packetCount > 0 ? totalSendTime.TotalMilliseconds / packetCount : 0;
+                LogAveragePacketsSentPerSecondAvgpacketsAverageSendTimeAvgsendtimeN2Ms(avgPackets, avgSendTime);
+
+                packetCount = 0;
+                totalSendTime = TimeSpan.Zero;
+                lastMetricLogTime = DateTime.UtcNow;
             }
 
             await Task.Delay(TimeSpan.FromMilliseconds(10), TimeProvider.System, stoppingToken);
         }
     }
+
+    [LoggerMessage(LogLevel.Debug, "Worker realtime running at: {time}")]
+    partial void LogWorkerRealtimeRunningAtTime(DateTimeOffset time);
+
+    [LoggerMessage(LogLevel.Debug, "Worker simulation running at: {time}")]
+    partial void LogWorkerSimulationRunningAtTime(DateTimeOffset time);
+
+    [LoggerMessage(LogLevel.Information, "Average packets sent (per second): {avgPackets}, Average send time: {avgSendTime:N2}ms")]
+    partial void LogAveragePacketsSentPerSecondAvgpacketsAverageSendTimeAvgsendtimeN2Ms(double avgPackets, double avgSendTime);
 }
