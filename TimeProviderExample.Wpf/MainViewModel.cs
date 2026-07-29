@@ -11,6 +11,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly TimeProvider _timeProvider;
     private readonly Timer _timer;
     private readonly HttpClient _httpClient;
+    private long _lastPacketCount;
+    private long _uiRefreshCount;
+    private DateTimeOffset _lastFpsTimestamp = DateTimeOffset.UtcNow;
+    private DateTimeOffset _lastUiFpsTimestamp = DateTimeOffset.UtcNow;
 
     [ObservableProperty]
     public partial string CurrentDate { get; set; } = "---";
@@ -20,6 +24,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     public partial string RealTime { get; set; } = DateTime.Now.ToString("G");
+
+    [ObservableProperty]
+    public partial double Fps { get; set; }
+
+    [ObservableProperty]
+    public partial double UiFps { get; set; }
 
     [ObservableProperty]
     public partial double Scale { get; set; } = 1.0;
@@ -34,7 +44,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         _timeProvider = timeProvider;
         _httpClient = httpClient;
-        _timer = new Timer(UpdateDateTime, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(100));
+        _timer = new Timer(UpdateDateTime, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(10));
     }
 
     [RelayCommand]
@@ -52,10 +62,36 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void UpdateDateTime(object? state)
     {
+        _uiRefreshCount++;
         var now = _timeProvider.GetUtcNow().LocalDateTime;
         CurrentDate = now.ToString("d");
         CurrentTime = now.ToString("T");
         RealTime = TimeProvider.System.GetUtcNow().LocalDateTime.ToString("G");
+
+        var currentTime = DateTimeOffset.UtcNow;
+        
+        // Calculate UDP FPS
+        if (_timeProvider is UdpTimeProvider udpProvider)
+        {
+            var currentCount = udpProvider.PacketCount;
+            var elapsed = currentTime - _lastFpsTimestamp;
+            
+            if (elapsed.TotalSeconds >= 1.0)
+            {
+                Fps = (currentCount - _lastPacketCount) / elapsed.TotalSeconds;
+                _lastPacketCount = currentCount;
+                _lastFpsTimestamp = currentTime;
+            }
+        }
+
+        // Calculate UI FPS
+        var uiElapsed = currentTime - _lastUiFpsTimestamp;
+        if (uiElapsed.TotalSeconds >= 1.0)
+        {
+            UiFps = _uiRefreshCount / uiElapsed.TotalSeconds;
+            _uiRefreshCount = 0;
+            _lastUiFpsTimestamp = currentTime;
+        }
     }
 
     async partial void OnScaleChanged(double value)

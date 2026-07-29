@@ -80,13 +80,37 @@
 
         <!-- Status Bar -->
         <StatusBar Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Background="#DDDDDD">
+            <StatusBarItem HorizontalAlignment="Left">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Margin="5,0">
+                        <Run>System Clock: </Run>
+                        <Bold>
+                            <Run Text="{Binding RealTime}"/>
+                        </Bold>
+                    </TextBlock>
+                    <Separator Width="1" Margin="5,2" Background="#AAAAAA"/>
+                    <TextBlock Margin="5,0">
+                        <Run>UDP FPS: </Run>
+                        <Bold>
+                            <Run Text="{Binding Fps, StringFormat=N1}"/>
+                        </Bold>
+                    </TextBlock>
+                    <Separator Width="1" Margin="5,2" Background="#AAAAAA"/>
+                    <TextBlock Margin="5,0">
+                        <Run>UI FPS: </Run>
+                        <Bold>
+                            <Run Text="{Binding UiFps, StringFormat=N1}"/>
+                        </Bold>
+                    </TextBlock>
+                </StackPanel>
+            </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right">
-                <TextBlock Margin="5,0">
-                    <Run>System Clock: </Run>
-                    <Bold>
-                        <Run Text="{Binding RealTime}"/>
-                    </Bold>
-                </TextBlock>
+                <StackPanel  Orientation="Horizontal">
+                    <TextBlock Margin="5,0">
+                        <Run>New window </Run>
+                        <Bold>F2</Bold>
+                    </TextBlock>
+                </StackPanel>
             </StatusBarItem>
         </StatusBar>
     </Grid>
