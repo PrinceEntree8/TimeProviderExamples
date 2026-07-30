@@ -1,4 +1,4 @@
-﻿namespace TimeProvider.Contracts;
+﻿namespace TimeProviderExample.Contracts;
 
 public class Class1
 {
