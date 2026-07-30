@@ -12,11 +12,11 @@ public class UdpTimeProvider : TimeProvider, IDisposable
 
     public long PacketCount => Interlocked.Read(ref _packetCount);
 
-    public UdpTimeProvider(string multicastAddress, int port)
+    public UdpTimeProvider(string address, int port)
     {
         _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
         _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, port));
-        _udpClient.JoinMulticastGroup(IPAddress.Parse(multicastAddress));
+        _udpClient.JoinMulticastGroup(IPAddress.Parse(address));
 
         Task.Run(ListenAsync, _cts.Token);
     }
@@ -52,5 +52,6 @@ public class UdpTimeProvider : TimeProvider, IDisposable
         _cts.Cancel();
         _cts.Dispose();
         _udpClient.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
