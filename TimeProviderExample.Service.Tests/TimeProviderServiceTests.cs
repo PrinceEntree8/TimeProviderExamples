@@ -188,4 +188,36 @@ public class TimeProviderServiceTests
         // Assert
         Assert.Equal(0, ticks);
     }
+
+    [Fact]
+    public async Task SetScale_Negative_MovesTimeBackwards()
+    {
+        // Arrange
+        var service = new TimeProviderService(DateTimeOffset.UtcNow, -1.0);
+        var t1 = service.GetUtcNow();
+
+        // Act
+        await Task.Delay(1000); // 1 real second
+        var t2 = service.GetUtcNow();
+
+        // Assert
+        Assert.True(t2 < t1, $"Time did not move backwards. T1: {t1}, T2: {t2}");
+        var elapsed = (t1 - t2).TotalSeconds;
+        Assert.InRange(elapsed, 0.8, 1.2);
+    }
+
+    [Fact]
+    public async Task OnTickSeconds_WithNegativeScale_Fires()
+    {
+        // Arrange
+        var service = new TimeProviderService(DateTimeOffset.UtcNow, -2.0);
+        var ticks = 0;
+        service.OnTickSeconds += _ => ticks++;
+
+        // Act
+        await Task.Delay(1000); // 1 real second -> 2 scaled seconds -> ~2 ticks
+
+        // Assert
+        Assert.InRange(ticks, 1, 3);
+    }
 }

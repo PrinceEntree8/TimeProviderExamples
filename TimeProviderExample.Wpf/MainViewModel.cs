@@ -106,7 +106,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             Scale = value switch
             {
-                < 0 => 0,
+                < -256 => -256,
                 > 256 => 256,
                 _ => value
             };

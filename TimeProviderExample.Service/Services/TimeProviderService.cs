@@ -67,8 +67,8 @@ public class TimeProviderService
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
         {
             // Scale the dueTime and period
-            var scaledDueTime = Math.Abs(_scale) < double.Epsilon ? Timeout.InfiniteTimeSpan : dueTime / _scale;
-            var scaledPeriod = Math.Abs(_scale) < double.Epsilon ? Timeout.InfiniteTimeSpan : period / _scale;
+            var scaledDueTime = Math.Abs(_scale) < double.Epsilon ? Timeout.InfiniteTimeSpan : dueTime / Math.Abs(_scale);
+            var scaledPeriod = Math.Abs(_scale) < double.Epsilon ? Timeout.InfiniteTimeSpan : period / Math.Abs(_scale);
             
             return base.CreateTimer(callback, state, scaledDueTime, scaledPeriod);
         }
@@ -104,7 +104,7 @@ public class TimeProviderService
     {
         _tickTimer?.Dispose();
         
-        if (_timeProvider.Scale >= 0)
+        if (Math.Abs(_timeProvider.Scale) > double.Epsilon)
         {
             _tickTimer = _timeProvider.CreateTimer(_ => 
             {
