@@ -157,4 +157,35 @@ public class TimeProviderServiceTests
         // With scale 0.5, 2 real seconds should be approx 1 scaled second
         Assert.InRange(elapsedScaled, 0.8, 1.2);
     }
+
+    [Fact]
+    public async Task SetScale_Zero_FreezesTime()
+    {
+        // Arrange
+        var service = new TimeProviderService(DateTimeOffset.UtcNow, 1.0);
+        service.SetScale(0.0);
+        var t1 = service.GetUtcNow();
+
+        // Act
+        await Task.Delay(1000); // 1 real second
+        var t2 = service.GetUtcNow();
+
+        // Assert
+        Assert.Equal(t1, t2);
+    }
+
+    [Fact]
+    public async Task OnTickSeconds_WithScaleZero_DoesNotFire()
+    {
+        // Arrange
+        var service = new TimeProviderService(DateTimeOffset.UtcNow, 0.0);
+        var ticks = 0;
+        service.OnTickSeconds += _ => ticks++;
+
+        // Act
+        await Task.Delay(2000); // 2 real seconds
+
+        // Assert
+        Assert.Equal(0, ticks);
+    }
 }

@@ -10,8 +10,9 @@
         ResizeMode="NoResize"
         WindowStyle="ToolWindow"
         d:DataContext="{d:DesignInstance Type=local:MainViewModel}"
-        Title="UDP Time Display" Height="300" Width="600">
+        Title="UDP Time Display" Height="320" Width="600">
     <Window.Resources>
+        <sys:Double x:Key="Double0.0">0.0</sys:Double>
         <sys:Double x:Key="Double0.5">0.5</sys:Double>
         <sys:Double x:Key="Double1.0">1.0</sys:Double>
         <sys:Double x:Key="Double2.0">2.0</sys:Double>
@@ -44,12 +45,15 @@
                 <TextBlock Text="Time Scale" Margin="0,0,0,5" FontWeight="Bold"/>
 
                 <UniformGrid Columns="2" Margin="0,0,0,5">
+                    <Button Content="Freeze (x0)" Command="{Binding SetScaleCommand}" CommandParameter="{StaticResource Double0.0}" Margin="2"/>
                     <Button Content="x0.5" Command="{Binding SetScaleCommand}" CommandParameter="{StaticResource Double0.5}" Margin="2"/>
                     <Button Content="x1" Command="{Binding SetScaleCommand}" CommandParameter="{StaticResource Double1.0}" Margin="2"/>
                     <Button Content="x2" Command="{Binding SetScaleCommand}" CommandParameter="{StaticResource Double2.0}" Margin="2"/>
                     <Button Content="x4" Command="{Binding SetScaleCommand}" CommandParameter="{StaticResource Double4.0}" Margin="2"/>
                     <Button Content="x8" Command="{Binding SetScaleCommand}" CommandParameter="{StaticResource Double8.0}" Margin="2"/>
                 </UniformGrid>
+
+                <Button Content="Restart Play" Command="{Binding RestartPlayCommand}" Margin="2,5,2,20" Padding="5"/>
 
                 <DockPanel Margin="0,0,0,20">
                     <TextBlock Text="Custom:" VerticalAlignment="Center" Margin="0,0,5,0"/>

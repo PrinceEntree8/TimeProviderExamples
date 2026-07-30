@@ -104,7 +104,7 @@ public class TimeProviderService
     {
         _tickTimer?.Dispose();
         
-        if (_timeProvider.Scale > 0)
+        if (_timeProvider.Scale >= 0)
         {
             _tickTimer = _timeProvider.CreateTimer(_ => 
             {

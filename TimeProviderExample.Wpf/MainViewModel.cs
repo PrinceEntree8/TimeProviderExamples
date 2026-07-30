@@ -60,6 +60,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         mainWindow.Show();
     }
 
+    [RelayCommand]
+    private void RestartPlay()
+    {
+        Scale = 1.0;
+    }
+
     private void UpdateDateTime(object? state)
     {
         _uiRefreshCount++;
@@ -100,9 +106,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             Scale = value switch
             {
-                < 0.1 => 0.1,
+                < 0 => 0,
                 > 256 => 256,
-                _ => Scale
+                _ => value
             };
 
             try
