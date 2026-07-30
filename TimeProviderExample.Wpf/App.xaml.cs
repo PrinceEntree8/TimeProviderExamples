@@ -21,7 +21,7 @@ public partial class App : Application
     private void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton<HttpClient>();
-        services.AddSingleton<TimeProvider>(_ => new UdpTimeProvider("224.0.0.1", 6000));
+        services.AddSingleton<TimeProvider>(_ => new UdpTimeProvider("239.0.0.1", 6000));
         services.AddTransient<MainViewModel>();
         services.AddTransient<MainWindow>();
     }
