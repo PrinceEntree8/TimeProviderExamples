@@ -1,11 +1,8 @@
-﻿using System.Windows;
+using Avalonia.Controls;
 using TimeProviderExample.Client.Core;
 
-namespace TimeProviderExample.Wpf;
+namespace TimeProviderExample.Avalonia;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow : Window
 {
     public MainWindow(MainViewModel viewModel)

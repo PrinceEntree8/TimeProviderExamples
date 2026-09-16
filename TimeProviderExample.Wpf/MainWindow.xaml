@@ -4,12 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        xmlns:local="clr-namespace:TimeProviderExample.Wpf"
+        xmlns:core="clr-namespace:TimeProviderExample.Client.Core;assembly=TimeProviderExample.Client.Core"
         mc:Ignorable="d"
         Topmost="True"
         ResizeMode="NoResize"
         WindowStyle="ToolWindow"
-        d:DataContext="{d:DesignInstance Type=local:MainViewModel}"
+        d:DataContext="{d:DesignInstance Type=core:MainViewModel}"
         Title="UDP Time Display" Height="400" Width="600">
     <Window.Resources>
         <sys:Double x:Key="DoubleNeg2.0">-2.0</sys:Double>

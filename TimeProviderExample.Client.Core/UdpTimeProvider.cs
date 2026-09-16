@@ -1,7 +1,7 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Sockets;
 
-namespace TimeProviderExample.Wpf;
+namespace TimeProviderExample.Client.Core;
 
 public class UdpTimeProvider : TimeProvider, IDisposable
 {

@@ -1,6 +1,7 @@
 ﻿using System.Net.Http;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using TimeProviderExample.Client.Core;
 
 namespace TimeProviderExample.Wpf;
 
@@ -22,6 +23,8 @@ public partial class App : Application
     {
         services.AddSingleton<HttpClient>();
         services.AddSingleton<TimeProvider>(_ => new UdpTimeProvider("239.0.0.1", 6000));
+        services.AddSingleton<IUiDispatcher, WpfUiDispatcher>();
+        services.AddSingleton<IMainWindowFactory, WpfMainWindowFactory>();
         services.AddTransient<MainViewModel>();
         services.AddTransient<MainWindow>();
     }
@@ -33,4 +36,3 @@ public partial class App : Application
         mainWindow.Show();
     }
 }
-

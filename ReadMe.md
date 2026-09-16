@@ -55,9 +55,32 @@ It exposes HTTP endpoints for reading and changing the simulated time:
 
 The service also runs a background worker that periodically broadcasts the current simulated time over UDP multicast.
 
+### `TimeProviderExample.Client.Core`
+
+A shared, UI-framework-independent class library consumed by both desktop clients.
+
+It contains the reusable client logic:
+
+- `UdpTimeProvider`, the custom `TimeProvider` fed by the UDP multicast stream;
+- `MainViewModel`, the MVVM view-model driving the UI (simulated date/time, real system time, UDP/UI packet rates, scale and date/time control);
+- `IMainWindowFactory` and `IUiDispatcher` abstractions so the view-model can spawn windows and marshal to the UI thread without depending on WPF or Avalonia.
+
 ### `TimeProviderExample.Wpf`
 
-A WPF client application that consumes the simulated time.
+A WPF client application that consumes the simulated time (Windows only).
+
+### `TimeProviderExample.Avalonia`
+
+An [Avalonia UI](https://avaloniaui.net/) client application that consumes the simulated time. It is a functional port of the WPF client and runs on **Linux, macOS, and Windows**.
+
+The UI (`MainWindow.axaml`) mirrors `MainWindow.xaml`, with the WPF-only constructs replaced by Avalonia equivalents:
+
+- `StatusBar`/`StatusBarItem` replaced by a `Border` + `DockPanel` status strip;
+- fixed-size `ToolWindow` replaced by a resizable window with `SizeToContent="WidthAndHeight"` (grows with the sidebar, minimum 600x400);
+- `Window.InputBindings` replaced by `Window.KeyBindings`;
+- `TextBlock.LayoutTransform` replaced by `LayoutTransformControl`;
+- the `Expander` sidebar replaced by a `ToggleButton` strip (chevron + label rotate together) driving an `IsSidebarOpen` view-model property;
+- `DatePicker.SelectedDate` bridged to the shared `DateTime` property via `DateTimeToDateTimeOffsetConverter`.
 
 The client receives time updates from the UDP multicast stream and exposes them through a custom `TimeProvider`. The UI displays:
 
@@ -113,17 +136,22 @@ Start the backend service first.
 
 The service is expected to listen for HTTP requests and broadcast simulated time over UDP multicast.
 
-Then start the WPF application.
+Then start a client:
 
-Once both are running, the WPF app should display the simulated time coming from the service.
+- on Windows: the WPF application (`TimeProviderExample.Wpf`);
+- on Linux, macOS, or Windows: the Avalonia application (`TimeProviderExample.Avalonia`):
+```bash
+dotnet run --project TimeProviderExample.Avalonia
+```
+
+Once both are running, the client should display the simulated time coming from the service.
 
 ## Docker
 
 The repository includes a `compose.yaml` file and a Dockerfile for the service project.
 
 The service can be built as a container image using Docker Compose.
-```
-bash
+```bash
 docker compose up --build
 ```
 
