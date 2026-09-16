@@ -1,0 +1,192 @@
+name: Release build
+
+# Builds the backend service and the desktop clients for Windows, Linux and
+# macOS whenever a GitHub Release is published, then attaches the binaries
+# (plus checksums) as assets to that release.
+#
+# Apps / runtimes produced:
+#   - TimeProviderExample.Service  (ASP.NET Core, NativeAOT, per PublishAot in csproj):
+#       win-x64, linux-x64, linux-arm64, osx-arm64
+#   - TimeProviderExample.Avalonia (cross-platform UI, self-contained single file):
+#       win-x64, linux-x64, linux-arm64, osx-x64, osx-arm64
+#   - TimeProviderExample.Wpf      (Windows-only UI, self-contained single file):
+#       win-x64
+#
+# Each runtime identifier is built on its native runner OS, which is required
+# for NativeAOT (service) and for WPF (Windows only).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: # manual run to validate the build; skips uploading to a release
+
+permissions:
+  contents: write # needed to upload assets to the release
+
+env:
+  DOTNET_VERSION: 10.0.x
+  CONFIGURATION: Release
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Run tests
+        run: dotnet test TimeProviderExample.Service.Tests/TimeProviderExample.Service.Tests.csproj -c "${{ env.CONFIGURATION }}"
+
+  build:
+    name: Build ${{ matrix.artifact }}
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Service (NativeAOT)
+          - os: windows-latest
+            rid: win-x64
+            aot: true
+            project: TimeProviderExample.Service/TimeProviderExample.Service.csproj
+            artifact: TimeProviderService-win-x64
+          - os: ubuntu-latest
+            rid: linux-x64
+            aot: true
+            project: TimeProviderExample.Service/TimeProviderExample.Service.csproj
+            artifact: TimeProviderService-linux-x64
+          - os: ubuntu-24.04-arm
+            rid: linux-arm64
+            aot: true
+            project: TimeProviderExample.Service/TimeProviderExample.Service.csproj
+            artifact: TimeProviderService-linux-arm64
+          - os: macos-latest
+            rid: osx-arm64
+            aot: true
+            project: TimeProviderExample.Service/TimeProviderExample.Service.csproj
+            artifact: TimeProviderService-osx-arm64
+          # Avalonia UI (cross-platform)
+          - os: windows-latest
+            rid: win-x64
+            aot: false
+            project: TimeProviderExample.Avalonia/TimeProviderExample.Avalonia.csproj
+            artifact: TimeProviderAvalonia-win-x64
+          - os: ubuntu-latest
+            rid: linux-x64
+            aot: false
+            project: TimeProviderExample.Avalonia/TimeProviderExample.Avalonia.csproj
+            artifact: TimeProviderAvalonia-linux-x64
+          - os: ubuntu-24.04-arm
+            rid: linux-arm64
+            aot: false
+            project: TimeProviderExample.Avalonia/TimeProviderExample.Avalonia.csproj
+            artifact: TimeProviderAvalonia-linux-arm64
+          - os: macos-latest
+            rid: osx-arm64
+            aot: false
+            project: TimeProviderExample.Avalonia/TimeProviderExample.Avalonia.csproj
+            artifact: TimeProviderAvalonia-osx-arm64
+          - os: macos-latest
+            rid: osx-x64
+            aot: false
+            project: TimeProviderExample.Avalonia/TimeProviderExample.Avalonia.csproj
+            artifact: TimeProviderAvalonia-osx-x64
+          # WPF UI (Windows only)
+          - os: windows-latest
+            rid: win-x64
+            aot: false
+            project: TimeProviderExample.Wpf/TimeProviderExample.Wpf.csproj
+            artifact: TimeProviderWpf-win-x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install NativeAOT prerequisites (Linux)
+        if: runner.os == 'Linux' && matrix.aot == true
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang zlib1g-dev
+
+      - name: Resolve version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            VERSION="0.0.0"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Building version $VERSION"
+
+      - name: Publish service (NativeAOT)
+        if: matrix.aot == true
+        run: >
+          dotnet publish "${{ matrix.project }}"
+          -c "${{ env.CONFIGURATION }}"
+          -r "${{ matrix.rid }}"
+          -o "publish/${{ matrix.artifact }}"
+          -p:Version="$VERSION"
+          "-p:InformationalVersion=$VERSION+${GITHUB_SHA:0:7}"
+
+      - name: Publish UI (self-contained single file)
+        if: matrix.aot != true
+        run: >
+          dotnet publish "${{ matrix.project }}"
+          -c "${{ env.CONFIGURATION }}"
+          -r "${{ matrix.rid }}"
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version="$VERSION"
+          "-p:InformationalVersion=$VERSION+${GITHUB_SHA:0:7}"
+          -o "publish/${{ matrix.artifact }}"
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: publish/${{ matrix.artifact }}
+          if-no-files-found: error
+
+  release:
+    name: Attach binaries to release
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Package artifacts and compute checksums
+        run: |
+          mkdir -p dist
+          for dir in artifacts/*/; do
+            name="$(basename "$dir")"
+            (cd "$dir" && zip -r "../../dist/${name}-${{ github.ref_name }}.zip" .)
+          done
+          (cd dist && sha256sum *.zip > checksums.txt)
+          ls -la dist
+
+      - name: Upload assets to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.zip
+            dist/checksums.txt
